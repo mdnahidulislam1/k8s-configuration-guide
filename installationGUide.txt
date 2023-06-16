@@ -1,0 +1,103 @@
+ cat /etc/hostname
+    2  cat /etc/hosts
+    3  vi /etc/hosts
+    4  clear
+    5  systemctl stop firewalld
+    6  systemctl status firewalld
+    7  cat /etc/selinux/config
+    8  vi /etc/selinux/config
+    9  sudo modprobe overlay
+   10  sudo modprobe br_netfilter
+   11  cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+
+   12  history
+   13  cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+
+   14  history
+   15  sudo sysctl --system
+   16  free -m
+   17  sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+   18  sudo swapoff -a
+   19  free -m
+   20  sudo dnf install dnf-utils
+   21   sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+   22  sudo dnf repolist
+   23  sudo dnf makecache
+   24  sudo dnf install containerd.io
+   25  sudo mv /etc/containerd/config.toml /etc/containerd/config.toml.orig
+   26  sudo containerd config default > /etc/containerd/config.toml
+   27  sudo nano /etc/containerd/config.toml
+   28  sudo vi /etc/containerd/config.toml
+   29  sudo systemctl enable --now containerd
+   30  sudo systemctl is-enabled containerd
+   31  sudo systemctl status containerd
+   32  cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+   33  vi /etc/yum.repos.d/kubernetes.repo
+   34  cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+exclude=kubelet kubeadm kubectl
+EOF
+
+   35  vi /etc/yum.repos.d/kubernetes.repo
+   36  sudo dnf repolist
+   37  sudo dnf makecache
+   38  sudo dnf install kubelet kubeadm kubectl --disableexcludes=kubernetes
+   39  sudo systemctl enable --now kubelet
+   40  lsmod | grep br_netfilter
+   41  sudo kubeadm config images pull
+   42  systemclt status kublet
+   43  systemctl status kublet
+   44  systemctl status kubelet
+   45  sudo systemctl enable --now kubelet
+   46  sudo kubeadm config kubeadm init --control-plane-endpoint=192.168.20.121 --pod-network-cidr 10.10.0.0/16 --cri-socket=unix:///run/containerd/containerd.sock pull
+   47  pwd
+   48  sudo kubeadm config kubeadm init --control-plane-endpoint=192.168.20.121 --pod-network-cidr 10.10.0.0/16 --cri-socket=unix:///run/containerd/containerd.sock
+   49  history
+========================================================
+
+
+
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Alternatively, if you are the root user, you can run:
+
+  export KUBECONFIG=/etc/kubernetes/admin.conf
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.20.121:6443 --token 572365.1qghyqmuosvp1plq \
+        --discovery-token-ca-cert-hash sha256:3c6e99751dd489595b47911bea5d1a0f1fbc815643ca2a356fa416337352d515
+
+
+
+
+
